@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Avi: Action from Volumetric Inference - A 3D Vision-Language-Action model for robotic manipulation through volumetric reasoning.">
+  <meta name="keywords" content="Avi, 3D VLA, Vision-Language-Action, Robotics, Volumetric Inference, ShapeLLM">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avi: Action from Volumetric Inference</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/Screenshot_2025-08-30_at_9.25.42_PM-removebg-preview.png">
+  
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .voxel-viewer-container button:hover {
+      background: #45a049 !important;
+    }
+
+    .voxel-viewer-container button:disabled {
+      background: #666 !important;
+      cursor: not-allowed;
+    }
+
+    /* Performance optimizations for hero section */
+    #teaser {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+
+    /* Video performance optimizations */
+    #teaser video {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      -webkit-transform: translateZ(0);
+      -moz-transform: translateZ(0);
+      -ms-transform: translateZ(0);
+      -o-transform: translateZ(0);
+    }
+
+    /* Optimize text rendering */
+    .publication-title {
+      font-display: swap;
+      text-rendering: optimizeLegibility;
+    }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+  <!-- Section Navigation Dots -->
+  <div id="section-dots" style="position: fixed; right: 30px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 15px;">
+    <div class="nav-dot" data-section="teaser" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Home"></div>
+    <div class="nav-dot" data-section="abstract" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Abstract"></div>
+    <div class="nav-dot" data-section="key-contributions" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Key Contributions"></div>
+    <div class="nav-dot" data-section="methodology" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Methodology"></div>
+    <div class="nav-dot" data-section="experimental-results" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Results"></div>
+    <div class="nav-dot" data-section="technical-details" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Technical Details"></div>
+    <div class="nav-dot" data-section="comparison" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Comparison"></div>
+    <div class="nav-dot" data-section="future-work" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Future Work"></div>
+    <div class="nav-dot" data-section="citation" style="width: 12px; height: 12px; border-radius: 50%; background: #ccc; cursor: pointer; transition: all 0.3s ease;" title="Citation"></div>
+  </div>
+
+
+
+
+<section class="hero" id="teaser" style="position: relative; overflow: hidden; min-height: 100vh;">
+  <!-- Video Background -->
+  <video autoplay muted loop playsinline preload="metadata" loading="lazy" poster="static/images/Screenshot_2025-08-30_at_9.25.42_PM-removebg-preview.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; will-change: transform; transform: translateZ(0);">
+    <source src="static/videos/teaser.mp4" type="video/mp4">
+  </video>
+
+  <!-- Overlay for better text readability -->
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 0;"></div>
+
+  <div class="hero-body" style="position: relative; z-index: 1; padding: 4rem 1.5rem;">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title" style="color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); font-size: 4rem; margin-bottom: 2rem;">Avi: Action from Volumetric Inference</h1>
+          <div class="is-size-4 publication-authors" style="margin-bottom: 1rem;">
+            <span class="author-block" style="color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);">
+              <a href="https://harris-song.github.io/" target="_blank" style="color: white; text-decoration: underline;">Harris Song</a><sup>1</sup>,
+              <a href="https://vlongle.github.io/" target="_blank" style="color: white; text-decoration: underline;">Long Le</a><sup>2</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors" style="margin-bottom: 0.5rem;">
+            <span class="author-block" style="color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);">
+              <sup>1</sup>UCLA, <sup>2</sup>UPenn
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors" style="margin-bottom: 0.5rem;">
+            <span class="author-block" style="color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);">
+              Correspondence: <a href="mailto:vlongle@seas.upenn.edu" style="color: white; text-decoration: underline;">vlongle@seas.upenn.edu</a>
+            </span>
+          </div>
+
+          <div class="is-size-4 publication-authors" style="margin-bottom: 2rem;">
+            <span class="author-block" style="color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);">NeurIPS 2025 Workshop on Embodied World Models for Decision Making</span>
+          </div>
+
+          <div class="column has-text-centered" style="margin-top: 2rem;">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="_Neurips_Workshop_2026__AVi.pdf"
+                   class="external-link button is-large is-rounded is-dark" style="margin: 0 0.5rem;" target="_blank">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="static/voxel-viewer.html"
+                   class="external-link button is-large is-rounded is-dark" style="margin: 0 0.5rem;">
+                  <span class="icon">
+                      <i class="fas fa-robot"></i>
+                  </span>
+                  <span>Demo</span>
+                  </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">System Architecture</h2>
+        <div class="content has-text-justified">
+          <p>
+            Avi combines stereo reconstruction, 2D segmentation (via Segment Anything), and a fine-tuned 
+            3D Vision-Language Model (based on Qwen-VL and 3D VQVAE embeddings) to predict goal-conditioned 
+            3D volumes. We further align these volumes using classical geometric optimization (ICP) to 
+            produce interpretable, spatially grounded actions.
+          </p>
+          
+          <div class="columns is-centered">
+            <div class="column is-8">
+              <div class="box">
+                <h4 class="title is-5">Input Pipeline</h4>
+                <ul>
+                  <li><strong>Stereo RGB-D:</strong> Real/simulated left and right RGB images with depth</li>
+                  <li><strong>SAM Segmentation:</strong> Object-level segmentation for spatial grounding</li>
+                  <li><strong>3D Point Cloud:</strong> Reconstructed scene representation P<sub>t</sub></li>
+                </ul>
+        </div>
+        </div>
+            <div class="column is-8">
+              <div class="box">
+                <h4 class="title is-5">Processing Pipeline</h4>
+                <ul>
+                  <li><strong>3D VQVAE:</strong> Encodes/decodes voxelized 3D shapes into discrete tokens</li>
+                  <li><strong>Qwen 2.5 7B:</strong> Vision-language model with LoRA fine-tuning</li>
+                  <li><strong>Location Quantization:</strong> 896 spatial tokens (X,Y,Z position + scale)</li>
+                </ul>
+        </div>
+        </div>
+            <div class="column is-8">
+              <div class="box">
+                <h4 class="title is-5">Output Pipeline</h4>
+                <ul>
+                  <li><strong>Volumetric Prediction:</strong> Next state point cloud P̂<sub>t+1</sub></li>
+                  <li><strong>ICP Alignment:</strong> Geometric optimization for spatial transformation</li>
+                  <li><strong>Action Execution:</strong> Morphology-agnostic robot control via IK</li>
+                </ul>
+        </div>
+        </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="abstract">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <div class="has-text-centered" style="margin-bottom: 12rem; margin-top: 6rem;">
+          <figure class="image">
+            <img src="static/imgs/avi.png" alt="Avi System Architecture" style="transform: scale(2); max-width: none; height: auto;">
+          </figure>
+        </div>
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            We present Avi (Action from Volumetric Inference), a novel 3D Vision-Language-Action (VLA) 
+            architecture that reframes robotic control as a problem of volumetric reasoning rather than 
+            low-level policy generation. By leveraging ShapeLLM-Omni as a 3D Multi-Modal Language Model 
+            and extending it with location quantization, we enable the model to interpret natural language 
+            instructions and predict goal-conditioned 3D representations of the environment. These predicted 
+            volumes are then aligned through geometric optimization, yielding interpretable and 
+            morphology-agnostic actions.
+          </p>
+          <p>
+            Our approach combines stereo reconstruction, 2D segmentation (via Segment Anything), and a 
+            fine-tuned 3D Vision-Language Model (based on Qwen-VL and 3D VQVAE embeddings) to predict 
+            goal-conditioned 3D volumes. We further align these volumes using classical geometric 
+            optimization (ICP) to produce interpretable, spatially grounded actions.
+          </p>
+        </div>
+    </div>
+        </div>
+  </div>
+</section>
+
+
+
+<section class="section" id="key-contributions">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Key Contributions</h2>
+    <div class="columns">
+      <div class="column is-4">
+        <div class="content has-text-justified">
+          <ol>
+            <li>
+              <strong>AVI (Action from Volumetric Inference):</strong> A novel architecture that integrates 
+              a 3D Multi-Modal Language Model to infer actions through volumetric reasoning, rather than 
+              directly generating action tokens. This approach shifts the focus from language-to-action 
+              to language-to-geometry, enabling richer spatial grounding.
+            </li>
+            <li>
+              <strong>Location Quantization for 3D MLLMs:</strong> A general technique for discretizing 
+              spatial information that allows pretrained 3D MLLMs to generalize at the object level rather 
+              than at the scene level. Unlike current state-of-the-art methods, which often overfit to 
+              scene layouts, our quantization method enables modularity and reusability across different 
+              3D architectures and robotics tasks.
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="column is-7">
+        <div class="voxel-viewer-container" style="position: relative; width: 100%; height: 600px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <div id="voxel-canvas-container" style="width: 100%; height: 100%;">
+            <!-- Three.js canvas will be inserted here -->
+          </div>
+          
+          <!-- Bottom controls bar -->
+          <div id="voxel-controls-bar" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px; border-top: 1px solid rgba(0, 0, 0, 0.1); z-index: 1000;">
+            <div style="display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 0 auto;">
+              <!-- Frame info -->
+              <div style="text-align: center; min-width: 120px;">
+                <div id="frame-number" style="font-size: 18px; font-weight: bold; color: #2196F3;">000</div>
+                <div style="font-size: 12px; color: #666;">Frame <span id="current-frame">0</span> of <span id="total-frames">18</span></div>
+              </div>
+              
+              <!-- Frame slider -->
+              <div style="flex: 0.5; margin: 0 20px;">
+                <input type="range" id="frame-slider" min="0" max="17" value="0" style="width: 100%; margin: 5px 0;">
+        </div>
+              
+              <!-- Playback controls -->
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="play-btn" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 12px;">▶</button>
+      </div>
+              
+              <!-- Speed control -->
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+                <span style="font-size: 12px; color: #666;">Speed:</span>
+                <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="1.0" style="width: 60px;">
+                <span id="speed-value" style="font-size: 12px; color: #666; min-width: 30px;">1.0x</span>
+          </div>
+
+              <!-- View controls -->
+              <div style="display: flex; gap: 10px;">
+                <button id="wireframe-btn" style="background: #2196F3; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 12px;">Wireframe</button>
+        </div>
+      </div>
+    </div>
+          
+          <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 8px; text-align: center; color: #333; display: none;">
+            <div class="spinner" style="border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #4CAF50; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            Loading VOX file...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="methodology">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Methodology</h2>
+        <div class="content has-text-justified">
+          <h3 class="title is-4">Architecture Overview</h3>
+          <p>
+            Our architecture extends the foundational 3D model, ShapeLLM-Omni, which is pretrained on 
+            large-scale 3D assets and capable of handling multi-modal inputs, including text, images, 
+            and 3D point clouds. We integrate Qwen-2.5 (7B), a state-of-the-art large vision-language 
+            model, with ShapeLLM-Omni to inherit both powerful linguistic grounding and native 3D spatial 
+            reasoning.
+          </p>
+          
+          <h3 class="title is-4">Location Quantization</h3>
+          <p>
+            We extend the vocabulary by introducing dedicated position and scale tokens. Specifically, 
+            we define three independent position axes: X, Y, Z ∈ {1,2,...,256}, each discretized into 
+            256 bins, and discretize object scale into S ∈ {1,2,...,128}, yielding 128 scale tokens. 
+            This introduces a total of 896 additional tokens for spatial context.
+          </p>
+          
+          <h3 class="title is-4">Transformation Calculation</h3>
+          <div class="columns">
+            <div class="column is-8">
+              <p>
+                Given a prompt and current scene point cloud P<sub>t</sub>, we generate a next point cloud 
+                prediction P̂<sub>t+1</sub> such that: P̂<sub>t+1</sub> ≈ P<sub>t</sub> + ΔP where ΔP 
+                represents the learned spatial change conditioned on the prompt. We then compute the 
+                Iterative Closest Point (ICP) transformation to minimize alignment error.
+              </p>
+              <p>
+                The system processes both geometric and linguistic inputs by mapping them into a shared 
+                latent space Z. Let P denote the input point cloud and T the human-provided text prompt. 
+                We define modality-specific encoders such that: f<sub>3D</sub>(P) ∈ Z, f<sub>text</sub>(T) ∈ Z, 
+                where f<sub>3D</sub> and f<sub>text</sub> are encoders for the 3D point cloud and text, respectively. 
+                This joint embedding ensures that both geometry and language are represented in a unified 
+                feature space, enabling cross-modal reasoning.
+              </p>
+              <p>
+                For the language backbone, we integrate Qwen-2.5 (7B), a state-of-the-art large vision-language 
+                model with 7 billion parameters. Qwen-2.5 provides strong multi-turn instruction-following, 
+                chain-of-thought reasoning, and multilingual capabilities, making it particularly well-suited 
+                for language-conditioned robotics.
+          </p>
+        </div>
+            <div class="column is-4">
+              <div style="margin-bottom: 1rem;">
+                <h4 class="title is-6 has-text-centered">Robot Manipulator</h4>
+                <div class="simple-voxel-viewer" style="position: relative; width: 100%; height: 200px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                  <div id="robot-voxel-canvas" style="width: 100%; height: 100%;">
+                    <!-- Robot VOX canvas will be inserted here -->
+          </div>
+            </div>
+          </div>
+              <div>
+                <h4 class="title is-6 has-text-centered">Drawer Object</h4>
+                <div class="simple-voxel-viewer" style="position: relative; width: 100%; height: 200px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                  <div id="drawer-voxel-canvas" style="width: 100%; height: 100%;">
+                    <!-- Drawer VOX canvas will be inserted here -->
+          </div>
+        </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="experimental-results">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Experimental Results</h2>
+        <div class="content has-text-justified">
+          <h3 class="title is-4">Dataset and Training</h3>
+          <p>
+            We fine-tune the foundational model on robotics training data using the LIBERO Dataset, 
+            which provides diverse task demonstrations within the Robosuite environment. Our experiments 
+            focus on the drawer-closing task, demonstrating that Avi produces semantically consistent 
+            and physically realizable manipulations from only a small number of demonstrations (50 demos).
+          </p>
+          
+          <h3 class="title is-4">Task Performance</h3>
+          <p>
+            Our experiments on the drawer-closing task show successful execution across eighteen inference 
+            steps. The model demonstrates the ability to generate semantically consistent and physically 
+            realizable action trajectories conditioned on natural language instructions like "Close the 
+            drawer with the robot."
+          </p>
+          
+          <h3 class="title is-4">Ablation Studies</h3>
+          <p>
+            Through qualitative ablation studies, we demonstrate that location quantization is critical 
+            for precise manipulation. In tasks requiring fine-grained control, such as pick-and-place 
+            or insertion, the model must accurately predict gripper positions for correct end-effector 
+            motions.
+          </p>
+          
+          <div class="columns is-centered">
+            <div class="column is-6">
+              <div class="box has-background-success-light">
+                <h4 class="title is-6">With Location Quantization</h4>
+                <ul>
+                  <li>✓ Reliable spatial grounding</li>
+                  <li>✓ Consistent end-effector alignment</li>
+                  <li>✓ Successful precision tasks</li>
+                  <li>✓ Robust geometric reasoning</li>
+                </ul>
+        </div>
+        </div>
+            <div class="column is-6">
+              <div class="box has-background-danger-light">
+                <h4 class="title is-6">Without Location Quantization</h4>
+                <ul>
+                  <li>✗ Ambiguous spatial predictions</li>
+                  <li>✗ Suboptimal end-effector motions</li>
+                  <li>✗ Failed precision tasks</li>
+                  <li>✗ Poor geometric reasoning</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="technical-details">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Technical Details</h2>
+        <div class="content has-text-justified">
+          <div class="columns">
+            <div class="column is-4">
+              <h3 class="title is-4">Model Architecture</h3>
+              <ul>
+                <li><strong>3D VQVAE Encoder/Decoder:</strong> Maps voxelized 3D shapes into discrete latent representations</li>
+                <li><strong>Qwen 2.5 7B:</strong> Vision-Language Model backbone for language understanding</li>
+                <li><strong>SAM (Segment Anything Model):</strong> For object segmentation and isolation</li>
+              </ul>
+      </div>
+            <div class="column is-7">
+              <figure class="image">
+                <img src="static/imgs/training.png" alt="Training Process" style="width: 100%; height: auto;">
+              </figure>
+    </div>
+          </div>
+          
+          <div style="margin-top: 1.5rem;">
+            <ul>
+              <li><strong>LoRA Injection:</strong> Efficient parameter updates without full model retraining</li>
+              <li><strong>ICP (Iterative Closest Point):</strong> Geometric optimization for spatial alignment</li>
+            </ul>
+            
+            <h3 class="title is-4">Training Setup</h3>
+            <ul>
+              <li><strong>Hardware:</strong> Single NVIDIA A6000 GPU with 48GB memory</li>
+              <li><strong>Dataset:</strong> LIBERO Dataset with Robosuite demonstrations</li>
+              <li><strong>Regularization:</strong> Dropout (p = 0.05) for limited-data regime</li>
+              <li><strong>Fine-tuning:</strong> LoRA adaptation on last K attention layers</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="comparison">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Comparison with Related Work</h2>
+        <div class="content has-text-justified">
+          <div class="has-text-centered" style="margin-bottom: 2rem;">
+            <figure class="image">
+              <img src="static/imgs/comparison.png" alt="Comparison with Related Work" style="max-width: 100%; height: auto;">
+            </figure>
+          </div>
+          <p>
+            Unlike prior Vision-Language-Action (VLA) methods that directly predict robot-specific 
+            action tokens, our approach emphasizes morphology-agnostic policy: rather than outputting 
+            actions, our model predicts transformed 3D point clouds from which robot-specific trajectories 
+            can be computed via inverse kinematics.
+          </p>
+          
+          <div class="table-container">
+            <table class="table is-fullwidth is-striped">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Input Modality</th>
+                  <th>Core Mechanism</th>
+                  <th>Generates 3D Point Clouds?</th>
+                  <th>No Action Tokens Needed?</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="has-background-success-light">
+                  <td><strong>This Work (Avi)</strong></td>
+                  <td>3D point clouds + language</td>
+                  <td>3D MLLM predicting delta point clouds + IK</td>
+                  <td>✓ Yes</td>
+                  <td>✓ Yes</td>
+                </tr>
+                <tr>
+                  <td>Robot4DGen</td>
+                  <td>RGB-D video</td>
+                  <td>4D video generation with multi-view constraint</td>
+                  <td>✗ No (video only)</td>
+                  <td>✗ No</td>
+                </tr>
+                <tr>
+                  <td>Unified Video-Action (UVA)</td>
+                  <td>RGB video</td>
+                  <td>Joint video–action latent modeling</td>
+                  <td>✗ No</td>
+                  <td>✗ No</td>
+                </tr>
+                <tr>
+                  <td>DP3</td>
+                  <td>3D point clouds</td>
+                  <td>Diffusion model over actions conditioned on 3D</td>
+                  <td>Uses 3D conditioning, outputs actions</td>
+                  <td>✗ No</td>
+                </tr>
+                <tr>
+                  <td>FP3</td>
+                  <td>3D point clouds + language</td>
+                  <td>Diffusion transformer policy pre-trained on 3D</td>
+                  <td>✗ No (actions directly)</td>
+                  <td>✗ No</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <p>
+            This shift from language-to-action to language-to-geometry enables richer spatial grounding, 
+            efficient sim-to-real transfer, and more robust reasoning in multi-object robotic environments.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section" id="future-work">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Future Work</h2>
+        <div class="content has-text-justified">
+          <p>
+            In future work, we plan to extend Avi to multi-task and multi-robot settings, evaluate it 
+            under real-world deployment using stereo-based 3D reconstruction pipelines, and integrate 
+            reinforcement learning to further refine long-horizon planning capabilities.
+          </p>
+          <div class="has-text-centered" style="margin-top: 2rem;">
+            <figure class="image">
+              <img src="static/imgs/detail.png" alt="Future Work Details" style="max-width: 100%; height: auto;">
+            </figure>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="citation">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Citation</h2>
+        <div class="content has-text-left">
+          <pre><code>@inproceedings{song2025avi,
+  title={Avi: A 3D Vision-Language Action Model Architecture generating Action from Volumetric Inference},
+  author={Harris Song and Long Le},
+  booktitle={NeurIPS 2025 Workshop on Embodied World Models for Decision Making},
+  year={2025},
+  url={https://openreview.net/forum?id=3UB24EwYWV}
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Avi: Action from Volumetric Inference</strong> - A 3D Vision-Language-Action model for robotic manipulation.
+      </p>
+      <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
+        Website template based on <a href="https://github.com/nerfies/nerfies.github.io" target="_blank">Nerfies project page</a>.
+        Thanks to <a href="https://pixie-3d.github.io/" target="_blank">Pixie-3D</a> and
+        <a href="https://umi-on-legs.github.io/" target="_blank">UMI on Legs</a> for inspiration and ideas.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<!-- Three.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<!-- VOX Viewer JavaScript -->
+<script>
+// VOX Viewer Integration
+let scene, camera, renderer, controls;
+let currentVoxelGroup = null;
+let nextVoxelGroup = null;
+let currentFrame = 0;
+let totalFrames = 18;
+let isPlaying = false;
+let playInterval = null;
+let playbackSpeed = 1.0;
+let isWireframe = false;
+let isTransitioning = false;
+let transitionProgress = 0;
+let transitionDuration = 0.3; // seconds
+
+// VOX file frames
+const voxFiles = [
+    '000.vox', '005.vox', '010.vox', '015.vox', '020.vox',
+    '025.vox', '030.vox', '035.vox', '040.vox', '045.vox',
+    '050.vox', '055.vox', '060.vox', '065.vox', '070.vox',
+    '075.vox', '080.vox', '085.vox', '090.vox'
+];
+
+// Preload cache for smoother navigation
+const voxelCache = new Map();
+
+// VOX file parser
+class VOXParser {
+    constructor() {
+        this.voxels = [];
+        this.palette = [];
+        this.size = { x: 0, y: 0, z: 0 };
+    }
+
+    async parseVoxFile(url) {
+        console.log('Fetching VOX file from:', url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        console.log('VOX file size:', arrayBuffer.byteLength, 'bytes');
+        
+        const dataView = new DataView(arrayBuffer);
+
+        // Check magic number
+        const magic = this.readString(dataView, 0, 4);
+        console.log('Magic number:', magic);
+        if (magic !== 'VOX ') {
+            throw new Error('Invalid VOX file format');
+        }
+
+        // Read version
+        const version = dataView.getUint32(4, true);
+        console.log('VOX version:', version);
+
+        // Parse chunks recursively
+        let offset = 8;
+        this.parseChunksRecursive(dataView, offset, arrayBuffer.byteLength);
+
+        console.log('Parsing complete. Voxels:', this.voxels.length, 'Palette:', this.palette.length, 'Size:', this.size);
+        return {
+            voxels: this.voxels,
+            palette: this.palette,
+            size: this.size
+        };
+    }
+
+    parseChunksRecursive(dataView, startOffset, endOffset) {
+        let offset = startOffset;
+        while (offset < endOffset) {
+            const chunkId = this.readString(dataView, offset, 4);
+            const chunkSize = dataView.getUint32(offset + 4, true);
+            const childrenSize = dataView.getUint32(offset + 8, true);
+            console.log('Chunk:', chunkId, 'size:', chunkSize, 'children:', childrenSize, 'at offset:', offset);
+            offset += 12;
+
+            if (chunkId === 'SIZE') {
+                this.parseSizeChunk(dataView, offset);
+            } else if (chunkId === 'XYZI') {
+                this.parseVoxelChunk(dataView, offset, chunkSize);
+            } else if (chunkId === 'RGBA') {
+                this.parsePaletteChunk(dataView, offset);
+            } else if (chunkId === 'MAIN' && childrenSize > 0) {
+                // Recursively parse child chunks
+                this.parseChunksRecursive(dataView, offset + chunkSize, offset + chunkSize + childrenSize);
+            }
+
+            offset += chunkSize + childrenSize;
+        }
+    }
+
+    readString(dataView, offset, length) {
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += String.fromCharCode(dataView.getUint8(offset + i));
+        }
+        return result;
+    }
+
+    parseSizeChunk(dataView, offset) {
+        this.size.x = dataView.getUint32(offset, true);
+        this.size.y = dataView.getUint32(offset + 4, true);
+        this.size.z = dataView.getUint32(offset + 8, true);
+    }
+
+    parseVoxelChunk(dataView, offset, chunkSize) {
+        const numVoxels = dataView.getUint32(offset, true);
+        console.log('Parsing', numVoxels, 'voxels');
+        offset += 4;
+
+        for (let i = 0; i < numVoxels; i++) {
+            const x = dataView.getUint8(offset + i * 4);
+            const y = dataView.getUint8(offset + i * 4 + 1);
+            const z = dataView.getUint8(offset + i * 4 + 2);
+            const colorIndex = Math.max(0, dataView.getUint8(offset + i * 4 + 3) - 1);
+
+            this.voxels.push({ x, y, z, colorIndex });
+        }
+        console.log('Parsed', this.voxels.length, 'voxels');
+    }
+
+    parsePaletteChunk(dataView, offset) {
+        for (let i = 0; i < 256; i++) {
+            const r = dataView.getUint8(offset + i * 4);
+            const g = dataView.getUint8(offset + i * 4 + 1);
+            const b = dataView.getUint8(offset + i * 4 + 2);
+            const a = dataView.getUint8(offset + i * 4 + 3);
+
+            this.palette.push({ r, g, b, a });
+        }
+    }
+}
+
+// Initialize the viewer when the page loads
+function initializeVoxViewer() {
+    const container = document.getElementById('voxel-canvas-container');
+    if (container && !scene && typeof THREE !== 'undefined') {
+        console.log('Initializing VOX viewer...');
+        try {
+            init();
+            setupEventListeners();
+            console.log('VOX viewer initialized successfully');
+        } catch (error) {
+            console.error('Error initializing VOX viewer:', error);
+        }
+    } else if (!container) {
+        console.error('VOX viewer container not found');
+    } else if (typeof THREE === 'undefined') {
+        console.error('Three.js not loaded');
+    } else {
+        console.log('VOX viewer already initialized');
+    }
+}
+
+// Try to initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initializeVoxViewer, 200);
+});
+
+// Also try when window loads
+window.addEventListener('load', function() {
+    setTimeout(initializeVoxViewer, 100);
+});
+
+function init() {
+    // Create scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8f9fa);
+
+    // Create camera
+    const container = document.getElementById('voxel-canvas-container');
+    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(100, 100, 100);
+
+    // Create renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Add controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+    controls.maxDistance = 400;
+    controls.minDistance = 10;
+
+    // Add lighting
+    addLighting();
+
+    // Grid removed for cleaner view
+    // addGrid();
+
+    // Load first frame
+    loadVoxFile(0);
+
+    // Start render loop
+    animate();
+}
+
+function addLighting() {
+    // Ambient light - slightly dimmer
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    // Directional light - slightly dimmer
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(50, 50, 50);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    // Additional directional light from opposite direction
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight2.position.set(-50, -50, -50);
+    scene.add(directionalLight2);
+
+    // Point light - slightly dimmer
+    const pointLight = new THREE.PointLight(0x4CAF50, 0.6, 150);
+    pointLight.position.set(-50, 50, -50);
+    scene.add(pointLight);
+
+    // Additional point light for better coverage
+    const pointLight2 = new THREE.PointLight(0xffffff, 0.4, 100);
+    pointLight2.position.set(50, -50, 50);
+    scene.add(pointLight2);
+}
+
+function addGrid() {
+    const gridHelper = new THREE.GridHelper(100, 20, 0xcccccc, 0x999999);
+    scene.add(gridHelper);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Handle smooth transitions
+    if (isTransitioning && nextVoxelGroup) {
+        transitionProgress += 0.016 / transitionDuration; // Assuming 60fps
+        
+        if (transitionProgress >= 1) {
+            // Transition complete
+            if (currentVoxelGroup) {
+                scene.remove(currentVoxelGroup);
+            }
+            currentVoxelGroup = nextVoxelGroup;
+            nextVoxelGroup = null;
+            isTransitioning = false;
+            transitionProgress = 0;
+        } else {
+            // Smooth fade transition
+            if (currentVoxelGroup) {
+                currentVoxelGroup.children.forEach(child => {
+                    if (child.material) {
+                        child.material.opacity = 1 - transitionProgress;
+                    }
+                });
+            }
+            if (nextVoxelGroup) {
+                nextVoxelGroup.children.forEach(child => {
+                    if (child.material) {
+                        child.material.opacity = transitionProgress;
+                    }
+                });
+            }
+        }
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+async function loadVoxFile(frameIndex) {
+    if (frameIndex < 0 || frameIndex >= voxFiles.length) return;
+
+    showLoading(true);
+
+    const voxFile = voxFiles[frameIndex];
+    const url = `./static/voxels/${voxFile}`;
+    
+    console.log('Loading VOX file:', url);
+
+    try {
+        let voxData;
+        
+        // Check cache first
+        if (voxelCache.has(frameIndex)) {
+            voxData = voxelCache.get(frameIndex);
+            console.log('Using cached data for frame', frameIndex);
+        } else {
+            // Parse and cache
+            console.log('Parsing VOX file for frame', frameIndex);
+            const parser = new VOXParser();
+            voxData = await parser.parseVoxFile(url);
+            voxelCache.set(frameIndex, voxData);
+            
+            console.log('Parsed voxel data:', {
+                voxels: voxData.voxels.length,
+                size: voxData.size,
+                palette: voxData.palette.length
+            });
+            
+            // Preload next frame for smoother navigation
+            const nextIndex = frameIndex + 1;
+            if (nextIndex < voxFiles.length && !voxelCache.has(nextIndex)) {
+                preloadFrame(nextIndex);
+            }
+        }
+        
+        if (voxData && voxData.voxels && voxData.voxels.length > 0) {
+            console.log('Creating voxel model with', voxData.voxels.length, 'voxels');
+            createVoxelModel(voxData, true);
+        } else {
+            console.log('No valid voxel data, using placeholder');
+            createVoxelPlaceholder(frameIndex, true);
+        }
+    } catch (error) {
+        console.error('Error loading VOX file:', error);
+        createVoxelPlaceholder(frameIndex, true);
+    }
+
+    showLoading(false);
+    updateUI();
+}
+
+async function preloadFrame(frameIndex) {
+    if (frameIndex < 0 || frameIndex >= voxFiles.length) return;
+    
+    const voxFile = voxFiles[frameIndex];
+    const url = `./static/voxels/${voxFile}`;
+    
+    try {
+        const parser = new VOXParser();
+        const voxData = await parser.parseVoxFile(url);
+        voxelCache.set(frameIndex, voxData);
+    } catch (error) {
+        console.log(`Failed to preload frame ${frameIndex}:`, error);
+    }
+}
+
+function createVoxelModel(voxData, useTransition = false) {
+    // Create a group for all voxels
+    const newVoxelGroup = new THREE.Group();
+
+    const voxelSize = 1;
+    const centerX = voxData.size.x / 2;
+    const centerY = voxData.size.y / 2;
+    const centerZ = voxData.size.z / 2;
+
+    // Group voxels by color for instanced rendering
+    const colorGroups = {};
+    
+    voxData.voxels.forEach(voxel => {
+        const colorKey = voxel.colorIndex.toString();
+        if (!colorGroups[colorKey]) {
+            colorGroups[colorKey] = [];
+        }
+        colorGroups[colorKey].push(voxel);
+    });
+
+    // Create instanced meshes for each color group
+    Object.keys(colorGroups).forEach(colorKey => {
+        const voxels = colorGroups[colorKey];
+        const colorIndex = parseInt(colorKey);
+        
+        // Get color from palette
+        let color;
+        if (voxData.palette && voxData.palette[colorIndex]) {
+            const paletteColor = voxData.palette[colorIndex];
+            color = new THREE.Color(
+                paletteColor.r / 255,
+                paletteColor.g / 255,
+                paletteColor.b / 255
+            );
+        } else {
+            // Default color if no palette
+            color = new THREE.Color().setHSL(colorIndex / 255, 0.8, 0.6);
+        }
+
+        // Create geometry and material for this color group
+        const geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+        const material = new THREE.MeshLambertMaterial({ 
+            color: color,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        if (isWireframe) {
+            material.wireframe = true;
+            material.wireframeLinewidth = 1;
+        }
+
+        // Create instanced mesh for this color group
+        const instancedMesh = new THREE.InstancedMesh(geometry, material, voxels.length);
+        instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        
+        // Set positions for all instances (Y-axis up)
+        const matrix = new THREE.Matrix4();
+        voxels.forEach((voxel, index) => {
+            matrix.setPosition(
+                (voxel.x - centerX) * voxelSize,
+                (voxel.z - centerZ) * voxelSize,
+                -(voxel.y - centerY) * voxelSize
+            );
+            instancedMesh.setMatrixAt(index, matrix);
+        });
+        
+        instancedMesh.castShadow = true;
+        instancedMesh.receiveShadow = true;
+        newVoxelGroup.add(instancedMesh);
+    });
+
+    // Handle smooth transitions
+    if (useTransition && currentVoxelGroup) {
+        // Start transition
+        nextVoxelGroup = newVoxelGroup;
+        nextVoxelGroup.children.forEach(child => {
+            if (child.material) {
+                child.material.opacity = 0;
+            }
+        });
+        scene.add(nextVoxelGroup);
+        isTransitioning = true;
+        transitionProgress = 0;
+    } else {
+        // Direct replacement
+        if (currentVoxelGroup) {
+            scene.remove(currentVoxelGroup);
+        }
+        currentVoxelGroup = newVoxelGroup;
+        scene.add(currentVoxelGroup);
+    }
+
+    // Update stats
+    updateStats(voxData);
+}
+
+function createVoxelPlaceholder(frameIndex, useTransition = false) {
+    // Create a group for all voxels
+    const newVoxelGroup = new THREE.Group();
+
+    // Create a simple voxel structure based on frame index
+    const voxelSize = 1;
+    const gridSize = 20;
+    const center = gridSize / 2;
+
+    // Create a pattern that changes with the frame
+    for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+            for (let z = 0; z < gridSize; z++) {
+                // Create a pattern that transforms over frames
+                const distance = Math.sqrt((x - center) ** 2 + (y - center) ** 2 + (z - center) ** 2);
+                const frameOffset = frameIndex * 0.5;
+                
+                if (distance < 8 + frameOffset && distance > 3 - frameOffset) {
+                    const geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+                    
+                    // Create color based on position and frame
+                    const hue = (frameIndex / totalFrames) * 0.3 + (distance / 15) * 0.7;
+                    const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+                    
+                    const material = new THREE.MeshLambertMaterial({ 
+                        color: color,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+
+                    if (isWireframe) {
+                        material.wireframe = true;
+                        material.wireframeLinewidth = 1;
+                    }
+
+                    const voxel = new THREE.Mesh(geometry, material);
+                    voxel.position.set(
+                        (x - center) * voxelSize,
+                        (z - center) * voxelSize,
+                        -(y - center) * voxelSize
+                    );
+                    voxel.castShadow = true;
+                    voxel.receiveShadow = true;
+
+                    newVoxelGroup.add(voxel);
+                }
+            }
+        }
+    }
+
+    // Handle smooth transitions
+    if (useTransition && currentVoxelGroup) {
+        // Start transition
+        nextVoxelGroup = newVoxelGroup;
+        nextVoxelGroup.children.forEach(child => {
+            if (child.material) {
+                child.material.opacity = 0;
+            }
+        });
+        scene.add(nextVoxelGroup);
+        isTransitioning = true;
+        transitionProgress = 0;
+    } else {
+        // Direct replacement
+        if (currentVoxelGroup) {
+            scene.remove(currentVoxelGroup);
+        }
+        currentVoxelGroup = newVoxelGroup;
+        scene.add(currentVoxelGroup);
+    }
+
+    // Update stats for placeholder
+    updateStats({
+        voxels: newVoxelGroup.children,
+        size: { x: gridSize, y: gridSize, z: gridSize },
+        palette: []
+    });
+}
+
+function updateStats(voxData) {
+    // Stats display removed - function kept for compatibility
+    console.log('Voxel stats:', {
+        voxels: voxData.voxels.length,
+        size: `${voxData.size.x}x${voxData.size.y}x${voxData.size.z}`,
+        colors: voxData.palette.length || 'N/A'
+    });
+}
+
+function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'block' : 'none';
+}
+
+function updateUI() {
+    document.getElementById('frame-number').textContent = voxFiles[currentFrame].replace('.vox', '');
+    document.getElementById('current-frame').textContent = currentFrame + 1;
+    document.getElementById('total-frames').textContent = totalFrames;
+    document.getElementById('frame-slider').value = currentFrame;
+}
+
+function setupEventListeners() {
+    // Frame slider
+    document.getElementById('frame-slider').addEventListener('input', function(e) {
+        currentFrame = parseInt(e.target.value);
+        loadVoxFile(currentFrame);
+        updateUI();
+    });
+
+    // Speed slider
+    document.getElementById('speed-slider').addEventListener('input', function(e) {
+        playbackSpeed = parseFloat(e.target.value);
+        document.getElementById('speed-value').textContent = playbackSpeed.toFixed(1) + 'x';
+        if (isPlaying) {
+            startPlayback();
+        }
+    });
+
+    // Control buttons
+    document.getElementById('play-btn').addEventListener('click', togglePlay);
+    document.getElementById('wireframe-btn').addEventListener('click', toggleWireframe);
+
+    // Keyboard controls
+    document.addEventListener('keydown', function(e) {
+        switch(e.code) {
+            case 'Space':
+                e.preventDefault();
+                togglePlay();
+                break;
+        }
+    });
+
+    // Window resize
+    window.addEventListener('resize', onWindowResize);
+}
+
+function nextFrame() {
+    if (currentFrame < totalFrames - 1) {
+        currentFrame++;
+        loadVoxFile(currentFrame);
+    }
+}
+
+function previousFrame() {
+    if (currentFrame > 0) {
+        currentFrame--;
+        loadVoxFile(currentFrame);
+    }
+}
+
+function togglePlay() {
+    if (isPlaying) {
+        stopPlayback();
+    } else {
+        startPlayback();
+    }
+}
+
+function startPlayback() {
+    isPlaying = true;
+    document.getElementById('play-btn').textContent = 'Pause';
+    playInterval = setInterval(() => {
+        if (currentFrame < totalFrames - 1) {
+            currentFrame++;
+            loadVoxFile(currentFrame);
+        } else {
+            stopPlayback();
+        }
+    }, 1000 / playbackSpeed);
+}
+
+function stopPlayback() {
+    isPlaying = false;
+    document.getElementById('play-btn').textContent = 'Play';
+    if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+    }
+}
+
+function toggleWireframe() {
+    isWireframe = !isWireframe;
+    document.getElementById('wireframe-btn').textContent = isWireframe ? 'Solid' : 'Wireframe';
+    
+    // Update current voxel group
+    if (currentVoxelGroup) {
+        currentVoxelGroup.children.forEach(child => {
+            if (child.material) {
+                child.material.wireframe = isWireframe;
+            }
+        });
+    }
+}
+
+function resetView() {
+    camera.position.set(50, 50, 50);
+    camera.lookAt(0, 0, 0);
+    controls.reset();
+}
+
+function onWindowResize() {
+    const container = document.getElementById('voxel-canvas-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+// Simple VOX viewers for objects
+function initSimpleVoxViewer(containerId, voxFile) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Create scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8f9fa);
+
+    // Create camera
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(50, 50, 50);
+
+    // Create renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Add controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+    controls.maxDistance = 200;
+    controls.minDistance = 10;
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(50, 50, 50);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight2.position.set(-50, -50, -50);
+    scene.add(directionalLight2);
+
+    // Load VOX file
+    loadSimpleVoxFile(scene, voxFile);
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+}
+
+async function loadSimpleVoxFile(scene, voxFile) {
+    try {
+        const parser = new VOXParser();
+        const voxData = await parser.parseVoxFile(`./static/object-voxels/${voxFile}`);
+        
+        if (voxData && voxData.voxels && voxData.voxels.length > 0) {
+            createSimpleVoxelModel(scene, voxData);
+        }
+    } catch (error) {
+        console.error('Error loading simple VOX file:', error);
+    }
+}
+
+function createSimpleVoxelModel(scene, voxData) {
+    const voxelGroup = new THREE.Group();
+    const voxelSize = 1;
+    const centerX = voxData.size.x / 2;
+    const centerY = voxData.size.y / 2;
+    const centerZ = voxData.size.z / 2;
+
+    // Group voxels by color for instanced rendering
+    const colorGroups = {};
+    
+    voxData.voxels.forEach(voxel => {
+        const colorKey = voxel.colorIndex.toString();
+        if (!colorGroups[colorKey]) {
+            colorGroups[colorKey] = [];
+        }
+        colorGroups[colorKey].push(voxel);
+    });
+
+    // Create instanced meshes for each color group
+    Object.keys(colorGroups).forEach(colorKey => {
+        const voxels = colorGroups[colorKey];
+        const colorIndex = parseInt(colorKey);
+        
+        // Get color from palette
+        let color;
+        if (voxData.palette && voxData.palette[colorIndex]) {
+            const paletteColor = voxData.palette[colorIndex];
+            color = new THREE.Color(
+                paletteColor.r / 255,
+                paletteColor.g / 255,
+                paletteColor.b / 255
+            );
+        } else {
+            color = new THREE.Color().setHSL(colorIndex / 255, 0.8, 0.6);
+        }
+
+        // Create geometry and material for this color group
+        const geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+        const material = new THREE.MeshLambertMaterial({ 
+            color: color,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        // Create instanced mesh for this color group
+        const instancedMesh = new THREE.InstancedMesh(geometry, material, voxels.length);
+        instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        
+        // Set positions for all instances (Y-axis up)
+        const matrix = new THREE.Matrix4();
+        voxels.forEach((voxel, index) => {
+            matrix.setPosition(
+                (voxel.x - centerX) * voxelSize,
+                (voxel.z - centerZ) * voxelSize,
+                -(voxel.y - centerY) * voxelSize
+            );
+            instancedMesh.setMatrixAt(index, matrix);
+        });
+        
+        instancedMesh.castShadow = true;
+        instancedMesh.receiveShadow = true;
+        voxelGroup.add(instancedMesh);
+    });
+
+    scene.add(voxelGroup);
+}
+
+// Initialize simple VOX viewers when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initSimpleVoxViewer('robot-voxel-canvas', 'robot.vox');
+        initSimpleVoxViewer('drawer-voxel-canvas', 'drawer.vox');
+    }, 500);
+});
+
+// Section Navigation Dots functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const dots = document.querySelectorAll('.nav-dot');
+  const sections = document.querySelectorAll('section[id]');
+  
+  // Handle dot clicks
+  dots.forEach(dot => {
+    dot.addEventListener('click', function() {
+      const targetSection = document.getElementById(this.dataset.section);
+      if (targetSection) {
+        targetSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+  
+  // Handle scroll events to highlight active section
+  function updateActiveDot() {
+    let activeSection = null;
+    const scrollPos = window.scrollY + window.innerHeight / 2;
+    
+    sections.forEach(section => {
+      const rect = section.getBoundingClientRect();
+      const sectionTop = rect.top + window.scrollY;
+      const sectionBottom = sectionTop + rect.height;
+      
+      if (scrollPos >= sectionTop && scrollPos <= sectionBottom) {
+        activeSection = section.id;
+      }
+    });
+    
+    // Update dot styles
+    dots.forEach(dot => {
+      if (dot.dataset.section === activeSection) {
+        dot.style.background = '#ff69b4'; // Pink for active
+        dot.style.transform = 'scale(1.2)';
+      } else {
+        dot.style.background = '#ccc';
+        dot.style.transform = 'scale(1)';
+      }
+    });
+  }
+  
+  // Listen for scroll events
+  window.addEventListener('scroll', updateActiveDot);
+  
+  // Initial call
+  updateActiveDot();
+});
+
+// Video performance optimization - pause when not in view
+document.addEventListener('DOMContentLoaded', function() {
+  const video = document.querySelector('#teaser video');
+
+  if (video && 'IntersectionObserver' in window) {
+    const videoObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Video is in view, play if it was paused
+          if (video.paused) {
+            video.play().catch(() => {
+              // Silently handle autoplay restrictions
+            });
+          }
+        } else {
+          // Video is out of view, pause to save resources
+          video.pause();
+        }
+      });
+    }, {
+      threshold: 0.1, // Trigger when 10% of video is visible
+      rootMargin: '50px' // Add some margin for smoother transitions
+    });
+
+    videoObserver.observe(video);
+  }
+
+  // Additional performance optimization - reduce video quality on smaller screens
+  function optimizeVideoForScreenSize() {
+    if (video && window.innerWidth < 768) {
+      // On mobile, we could add poster or reduce playback rate, but for now just ensure it's muted
+      video.muted = true;
+    }
+  }
+
+  // Run on load and resize
+  optimizeVideoForScreenSize();
+  window.addEventListener('resize', optimizeVideoForScreenSize);
+});
+</script>
+
+</body>
+</html>
